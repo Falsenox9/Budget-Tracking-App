@@ -35,7 +35,6 @@ func (m *middleware) AuthenticateUser(c *gin.Context) {
 		return
 	}
 
-	// Store both user and userID in context
 	c.Set("user", user)
 	c.Set("userID", userID.String())
 	c.Next()

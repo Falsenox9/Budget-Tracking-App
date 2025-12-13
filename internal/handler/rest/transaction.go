@@ -198,7 +198,6 @@ func (r *Rest) GetTopCategories(c *gin.Context) {
 		return
 	}
 
-	// Default limit is 5 for top 5
 	limit := 5
 
 	resp, err := r.service.TransactionService.GetTopCategories(userUUID, limit)

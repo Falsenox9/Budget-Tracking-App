@@ -18,6 +18,4 @@ type Category struct {
 	UserID uuid.UUID `json:"user_id" gorm:"type:varchar(36);not null"`
 
 	User User `json:"user" gorm:"foreignKey:UserID;references:UserID"`
-	// Removed to avoid circular FK constraint
-	// Transactions []Transaction `json:"transactions" gorm:"foreignKey:CategoryID;references:CategoryID"`
 }

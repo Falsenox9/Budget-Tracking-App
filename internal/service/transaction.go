@@ -38,7 +38,6 @@ func NewTransactionService(db *gorm.DB, transactionRepo repository.ITransactionR
 }
 
 func (s *TransactionService) CreateTransaction(param model.TransactionParam, userID uuid.UUID) (*model.TransactionResponse, error) {
-	// Validate category exists and belongs to user
 	catUUID, err := uuid.Parse(param.CategoryID)
 	if err != nil {
 		return nil, errors.New("invalid category ID")
@@ -60,6 +59,7 @@ func (s *TransactionService) CreateTransaction(param model.TransactionParam, use
 		Description:     param.Description,
 		Status:          param.Status,
 		TransactionDate: param.TransactionDate,
+		PaymentDueDate:  param.PaymentDueDate,
 		CategoryID:      catUUID,
 		UserID:          userID,
 		CreatedAt:       time.Now(),
@@ -80,6 +80,7 @@ func (s *TransactionService) CreateTransaction(param model.TransactionParam, use
 		Description:     transaction.Description,
 		Status:          transaction.Status,
 		TransactionDate: transaction.TransactionDate,
+		PaymentDueDate:  transaction.PaymentDueDate,
 		CreatedAt:       transaction.CreatedAt,
 		UpdatedAt:       transaction.UpdatedAt,
 	}, nil
@@ -109,6 +110,7 @@ func (s *TransactionService) GetTransaction(transactionID string, userID uuid.UU
 		Description:     transaction.Description,
 		Status:          transaction.Status,
 		TransactionDate: transaction.TransactionDate,
+		PaymentDueDate:  transaction.PaymentDueDate,
 		CreatedAt:       transaction.CreatedAt,
 		UpdatedAt:       transaction.UpdatedAt,
 	}, nil
@@ -131,6 +133,7 @@ func (s *TransactionService) GetAllTransactions(userID uuid.UUID) ([]model.Trans
 			Description:     tx.Description,
 			Status:          tx.Status,
 			TransactionDate: tx.TransactionDate,
+			PaymentDueDate:  tx.PaymentDueDate,
 			CreatedAt:       tx.CreatedAt,
 			UpdatedAt:       tx.UpdatedAt,
 		}
@@ -170,6 +173,7 @@ func (s *TransactionService) GetTransactionsByCategory(categoryID string, userID
 			Description:     tx.Description,
 			Status:          tx.Status,
 			TransactionDate: tx.TransactionDate,
+			PaymentDueDate:  tx.PaymentDueDate,
 			CreatedAt:       tx.CreatedAt,
 			UpdatedAt:       tx.UpdatedAt,
 		}
@@ -193,7 +197,6 @@ func (s *TransactionService) UpdateTransaction(transactionID string, param model
 		return nil, errors.New("unauthorized access to transaction")
 	}
 
-	// Validate new category if changed
 	catUUID, err := uuid.Parse(param.CategoryID)
 	if err != nil {
 		return nil, errors.New("invalid category ID")
@@ -208,13 +211,13 @@ func (s *TransactionService) UpdateTransaction(transactionID string, param model
 		return nil, errors.New("unauthorized access to category")
 	}
 
-	// Update fields
 	transaction.Title = param.Title
 	transaction.CategoryID = catUUID
 	transaction.Amount = param.Amount
 	transaction.Description = param.Description
 	transaction.Status = param.Status
 	transaction.TransactionDate = param.TransactionDate
+	transaction.PaymentDueDate = param.PaymentDueDate
 	transaction.UpdatedAt = time.Now()
 
 	err = s.transactionRepo.Update(s.db, transaction)
@@ -231,6 +234,7 @@ func (s *TransactionService) UpdateTransaction(transactionID string, param model
 		Description:     transaction.Description,
 		Status:          transaction.Status,
 		TransactionDate: transaction.TransactionDate,
+		PaymentDueDate:  transaction.PaymentDueDate,
 		CreatedAt:       transaction.CreatedAt,
 		UpdatedAt:       transaction.UpdatedAt,
 	}, nil
@@ -263,13 +267,11 @@ func (s *TransactionService) GetStatistics7Days(userID uuid.UUID) (*model.Statis
 		return nil, err
 	}
 
-	// Calculate total spent
 	totalSpent := 0
 	for _, tx := range transactions {
 		totalSpent += tx.Amount
 	}
 
-	// Group by date for daily data
 	dailyMap := make(map[string]int)
 	for _, tx := range transactions {
 		dateKey := tx.TransactionDate.Format("2006-01-02")
@@ -293,7 +295,6 @@ func (s *TransactionService) GetStatistics7Days(userID uuid.UUID) (*model.Statis
 		}
 	}
 
-	// Group by category
 	categoryMap := make(map[uuid.UUID]*model.CategoryStatistic)
 	for _, tx := range transactions {
 		if stat, exists := categoryMap[tx.CategoryID]; exists {
@@ -331,13 +332,10 @@ func (s *TransactionService) GetStatisticsThisWeek(userID uuid.UUID) (*model.Sta
 		return nil, err
 	}
 
-	// Calculate total spent
 	totalSpent := 0
 	for _, tx := range transactions {
 		totalSpent += tx.Amount
 	}
-
-	// Map weekday Indonesian names
 	weekdayNames := map[time.Weekday]string{
 		time.Monday:    "Sen",
 		time.Tuesday:   "Sel",
@@ -348,7 +346,6 @@ func (s *TransactionService) GetStatisticsThisWeek(userID uuid.UUID) (*model.Sta
 		time.Sunday:    "Min",
 	}
 
-	// Group by date for daily data (Mon-Sun)
 	dailyMap := make(map[string]int)
 	for _, tx := range transactions {
 		weekday := tx.TransactionDate.Weekday()
@@ -356,7 +353,6 @@ func (s *TransactionService) GetStatisticsThisWeek(userID uuid.UUID) (*model.Sta
 		dailyMap[dayName] += tx.Amount
 	}
 
-	//  Ensure all days are present (even with 0 amount)
 	days := []string{"Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"}
 	dailyData := make([]model.DailyStatistic, 0)
 	var highestDay *model.DailyStatistic
@@ -376,7 +372,6 @@ func (s *TransactionService) GetStatisticsThisWeek(userID uuid.UUID) (*model.Sta
 		}
 	}
 
-	// Group by category
 	categoryMap := make(map[uuid.UUID]*model.CategoryStatistic)
 	for _, tx := range transactions {
 		if stat, exists := categoryMap[tx.CategoryID]; exists {
@@ -414,13 +409,10 @@ func (s *TransactionService) GetTopCategories(userID uuid.UUID, limit int) ([]mo
 		return nil, err
 	}
 
-	// Calculate total for percentage
 	totalSpent := 0
 	for _, cat := range topCats {
 		totalSpent += cat["total_spent"].(int)
 	}
-
-	// Predefined colors for UI
 	colors := []string{"#FF6B35", "#F24C88", "#4E9FE5", "#00D9A3", "#8E44AD"}
 
 	responses := make([]model.TopCategoryResponse, len(topCats))
@@ -431,7 +423,7 @@ func (s *TransactionService) GetTopCategories(userID uuid.UUID, limit int) ([]mo
 			percentage = (float64(spent) / float64(totalSpent)) * 100
 		}
 
-		color := colors[i%len(colors)] // Cycle through colors
+		color := colors[i%len(colors)] 
 
 		responses[i] = model.TopCategoryResponse{
 			Rank:         i + 1,

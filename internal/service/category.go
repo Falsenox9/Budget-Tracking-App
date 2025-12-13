@@ -70,7 +70,6 @@ func (s *CategoryService) GetCategory(categoryID string, userID uuid.UUID) (*mod
 		return nil, errors.New("unauthorized access to category")
 	}
 
-	// Calculate total spent
 	totalSpent, err := s.categoryRepo.CalculateTotalSpent(s.db, catUUID)
 	if err != nil {
 		return nil, err
@@ -94,19 +93,16 @@ func (s *CategoryService) GetCategoryWithTransactions(categoryID string, userID 
 		return nil, errors.New("unauthorized access to category")
 	}
 
-	// Calculate total spent
 	totalSpent, err := s.categoryRepo.CalculateTotalSpent(s.db, catUUID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get transactions for this category
 	txList, err := s.transactionRepo.FindByCategoryID(s.db, catUUID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Map transactions
 	transactions := make([]model.TransactionResponse, len(txList))
 	for i, tx := range txList {
 		transactions[i] = model.TransactionResponse{
@@ -162,7 +158,6 @@ func (s *CategoryService) UpdateCategory(categoryID string, param model.Category
 		return nil, errors.New("unauthorized access to category")
 	}
 
-	// Update fields
 	category.Name = param.Name
 	category.Description = param.Description
 	category.Type = param.Type
@@ -174,7 +169,6 @@ func (s *CategoryService) UpdateCategory(categoryID string, param model.Category
 		return nil, err
 	}
 
-	// Calculate total spent
 	totalSpent, err := s.categoryRepo.CalculateTotalSpent(s.db, catUUID)
 	if err != nil {
 		return nil, err
@@ -201,7 +195,6 @@ func (s *CategoryService) DeleteCategory(categoryID string, userID uuid.UUID) er
 	return s.categoryRepo.Delete(s.db, catUUID)
 }
 
-// Helper method untuk menghitung progress category
 func (s *CategoryService) calculateCategoryProgress(category *entity.Category, totalSpent int) *model.CategoryResponse {
 	remaining := category.AllowanceLimit - totalSpent
 	if remaining < 0 {

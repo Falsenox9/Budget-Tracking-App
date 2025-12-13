@@ -109,17 +109,14 @@ func (r *TransactionRepository) GetLast7Days(tx *gorm.DB, userID uuid.UUID) ([]*
 func (r *TransactionRepository) GetThisWeekTransactions(tx *gorm.DB, userID uuid.UUID) ([]*entity.Transaction, error) {
 	var transactions []*entity.Transaction
 
-	// Get start of week (Monday)
 	now := time.Now()
 	weekday := now.Weekday()
-	// Convert Sunday (0) to 7 for calculation
 	if weekday == 0 {
 		weekday = 7
 	}
 	startOfWeek := now.AddDate(0, 0, -int(weekday)+1)
 	startOfWeek = time.Date(startOfWeek.Year(), startOfWeek.Month(), startOfWeek.Day(), 0, 0, 0, 0, startOfWeek.Location())
 
-	// End of week (Sunday)
 	endOfWeek := startOfWeek.AddDate(0, 0, 6)
 	endOfWeek = time.Date(endOfWeek.Year(), endOfWeek.Month(), endOfWeek.Day(), 23, 59, 59, 999999999, endOfWeek.Location())
 

@@ -33,7 +33,7 @@ func (r *Rest) MountEndPoint() {
 
 	user := baseURL.Group("/user")
 	user.Use(r.middleware.AuthenticateUser)
-	user.PUT("/budget", r.UpdateMonthlyBudget) // NEW: Update monthly budget
+	user.PUT("/budget", r.UpdateMonthlyBudget) 
 	// user.GET("/get-all-users", r.GetAllUsers)
 	// user.GET("/get-user-by-id/:id", r.GetUserByID)
 	// user.PUT("/update-user/:id", r.UpdateUser)
@@ -62,8 +62,8 @@ func (r *Rest) MountEndPoint() {
 	statistics := baseURL.Group("/statistics")
 	statistics.Use(r.middleware.AuthenticateUser)
 	statistics.GET("/7days", r.GetStatistics7Days)
-	statistics.GET("/weekly", r.GetStatisticsThisWeek)    // NEW: Minggu Ini
-	statistics.GET("/top-categories", r.GetTopCategories) // NEW: Top 5 Ranking
+	statistics.GET("/weekly", r.GetStatisticsThisWeek) 
+	statistics.GET("/top-categories", r.GetTopCategories) 
 }
 
 func (r *Rest) Run() {

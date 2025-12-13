@@ -32,10 +32,9 @@ type UserResponse struct {
 	UserID           string `json:"user_id"`
 	Name             string `json:"name"`
 	Email            string `json:"email"`
-	MonthlyAllowance int    `json:"monthly_allowance"` // Saldo Bulanan
+	MonthlyAllowance int    `json:"monthly_allowance"` 
 }
 
-// UserUpdateBudgetParam - untuk update monthly allowance
 type UserUpdateBudgetParam struct {
 	MonthlyAllowance int `json:"monthly_allowance" binding:"required,min=0"`
 }

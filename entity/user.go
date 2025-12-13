@@ -15,7 +15,7 @@ type User struct {
 	CreatedAt        time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt        time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 
-	// Removed reverse relationships to avoid circular FK constraints during migration
+	
 	// Transactions []Transaction `json:"transactions" gorm:"foreignKey:UserID;references:UserID"`
 	// Categories   []Category    `json:"categories" gorm:"foreignKey:UserID;references:UserID"`
 }

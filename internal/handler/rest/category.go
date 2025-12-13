@@ -19,7 +19,6 @@ func (r *Rest) CreateCategory(c *gin.Context) {
 		return
 	}
 
-	// Get userID from auth middleware context
 	userID, exists := c.Get("userID")
 	if !exists {
 		response.Error(c, http.StatusUnauthorized, "user not authenticated", nil)
