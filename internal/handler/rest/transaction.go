@@ -3,6 +3,7 @@ package rest
 import (
 	"budget-tracking-app/model"
 	"budget-tracking-app/pkg/response"
+	"time"
 
 	"net/http"
 
@@ -38,6 +39,68 @@ func (r *Rest) CreateTransaction(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusCreated, "transaction created successfully", resp)
+}
+
+func (r *Rest) CreatePlan(c *gin.Context) {
+	var param model.PlanParam
+
+	err := c.ShouldBindJSON(&param)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "failed to bind json", err)
+		return
+	}
+
+	userID, exists := c.Get("userID")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "user not authenticated", nil)
+		return
+	}
+
+	userUUID, err := uuid.Parse(userID.(string))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid user ID", err)
+		return
+	}
+
+	status := "Belum Terbayar"
+	if param.Completed {
+		status = "Sudah Terbayar"
+	}
+
+	dueDate, err := time.Parse("2006-01-02", param.DueDate)
+	if err != nil {
+		dueDate, err = time.Parse(time.RFC3339, param.DueDate)
+		if err != nil {
+			response.Error(c, http.StatusBadRequest, "invalid date format", err)
+			return
+		}
+	}
+
+	var catID, catName string
+	if _, err := uuid.Parse(param.Category); err == nil {
+		catID = param.Category
+	} else {
+		catName = param.Category
+	}
+
+	transactionParam := model.TransactionParam{
+		Title:           param.Title,
+		Amount:          param.Amount,
+		Description:     param.Description,
+		CategoryID:      catID,
+		CategoryName:    catName,
+		Status:          status,
+		TransactionDate: time.Now().Format("2006-01-02"), 
+		PaymentDueDate:  &dueDate,
+	}
+
+	resp, err := r.service.TransactionService.CreateTransaction(transactionParam, userUUID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "failed to create plan", err)
+		return
+	}
+
+	response.Success(c, http.StatusCreated, "plan created successfully", resp)
 }
 
 func (r *Rest) GetTransaction(c *gin.Context) {
@@ -207,4 +270,8 @@ func (r *Rest) GetTopCategories(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "top categories retrieved successfully", resp)
+}
+
+func (r *Rest) GetPlans(c *gin.Context) {
+	r.GetAllTransactions(c)
 }

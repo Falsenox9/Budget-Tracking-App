@@ -12,10 +12,10 @@ type User struct {
 	Email            string    `json:"email" gorm:"type:varchar(255);not null;unique"`
 	Password         string    `json:"password" gorm:"type:varchar(255);not null"`
 	MonthlyAllowance int       `json:"monthly_allowance" gorm:"type:int;not null"`
+	Avatar           string    `json:"avatar" gorm:"type:text"` // URL Foto Profil
 	CreatedAt        time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt        time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 
-	
 	// Transactions []Transaction `json:"transactions" gorm:"foreignKey:UserID;references:UserID"`
 	// Categories   []Category    `json:"categories" gorm:"foreignKey:UserID;references:UserID"`
 }

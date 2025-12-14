@@ -193,7 +193,6 @@ func (r *TransactionRepository) GetTopCategoriesBySpending(tx *gorm.DB, userID u
 		return nil, err
 	}
 
-	// Convert to map for easier handling in service
 	topCategories := make([]map[string]interface{}, len(results))
 	for i, result := range results {
 		topCategories[i] = map[string]interface{}{

@@ -38,9 +38,22 @@ func NewTransactionService(db *gorm.DB, transactionRepo repository.ITransactionR
 }
 
 func (s *TransactionService) CreateTransaction(param model.TransactionParam, userID uuid.UUID) (*model.TransactionResponse, error) {
-	catUUID, err := uuid.Parse(param.CategoryID)
-	if err != nil {
-		return nil, errors.New("invalid category ID")
+	var catUUID uuid.UUID
+	var err error
+
+	if param.CategoryID != "" {
+		catUUID, err = uuid.Parse(param.CategoryID)
+		if err != nil {
+			return nil, errors.New("invalid category ID")
+		}
+	} else if param.CategoryName != "" {
+		category, err := s.categoryRepo.FindByName(s.db, param.CategoryName, userID)
+		if err != nil {
+			return nil, errors.New("category not found")
+		}
+		catUUID = category.CategoryID
+	} else {
+		return nil, errors.New("category is required")
 	}
 
 	category, err := s.categoryRepo.FindByID(s.db, catUUID)
@@ -52,13 +65,26 @@ func (s *TransactionService) CreateTransaction(param model.TransactionParam, use
 		return nil, errors.New("unauthorized access to category")
 	}
 
+	status := param.Status
+	if status == "" {
+		status = "Sudah Terbayar"
+	}
+
+	parsedDate, err := time.Parse("2006-01-02", param.TransactionDate)
+	if err != nil {
+		parsedDate, err = time.Parse(time.RFC3339, param.TransactionDate)
+		if err != nil {
+			return nil, errors.New("invalid date format (expected YYYY-MM-DD)")
+		}
+	}
+
 	transaction := &entity.Transaction{
 		TransactionID:   uuid.New(),
 		Title:           param.Title,
 		Amount:          param.Amount,
 		Description:     param.Description,
-		Status:          param.Status,
-		TransactionDate: param.TransactionDate,
+		Status:          status,
+		TransactionDate: parsedDate,
 		PaymentDueDate:  param.PaymentDueDate,
 		CategoryID:      catUUID,
 		UserID:          userID,
@@ -216,7 +242,16 @@ func (s *TransactionService) UpdateTransaction(transactionID string, param model
 	transaction.Amount = param.Amount
 	transaction.Description = param.Description
 	transaction.Status = param.Status
-	transaction.TransactionDate = param.TransactionDate
+
+	parsedDate, err := time.Parse("2006-01-02", param.TransactionDate)
+	if err != nil {
+		parsedDate, err = time.Parse(time.RFC3339, param.TransactionDate)
+		if err != nil {
+			return nil, errors.New("invalid date format")
+		}
+	}
+	transaction.TransactionDate = parsedDate
+
 	transaction.PaymentDueDate = param.PaymentDueDate
 	transaction.UpdatedAt = time.Now()
 
@@ -423,7 +458,7 @@ func (s *TransactionService) GetTopCategories(userID uuid.UUID, limit int) ([]mo
 			percentage = (float64(spent) / float64(totalSpent)) * 100
 		}
 
-		color := colors[i%len(colors)] 
+		color := colors[i%len(colors)]
 
 		responses[i] = model.TopCategoryResponse{
 			Rank:         i + 1,

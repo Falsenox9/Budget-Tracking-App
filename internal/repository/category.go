@@ -10,6 +10,7 @@ import (
 type ICategoryRepository interface {
 	Create(tx *gorm.DB, category *entity.Category) error
 	FindByID(tx *gorm.DB, categoryID uuid.UUID) (*entity.Category, error)
+	FindByName(tx *gorm.DB, name string, userID uuid.UUID) (*entity.Category, error)
 	FindByUserID(tx *gorm.DB, userID uuid.UUID) ([]*entity.Category, error)
 	Update(tx *gorm.DB, category *entity.Category) error
 	Delete(tx *gorm.DB, categoryID uuid.UUID) error
@@ -36,6 +37,15 @@ func (r *CategoryRepository) Create(tx *gorm.DB, category *entity.Category) erro
 func (r *CategoryRepository) FindByID(tx *gorm.DB, categoryID uuid.UUID) (*entity.Category, error) {
 	var category *entity.Category
 	err := tx.Where("category_id = ?", categoryID).First(&category).Error
+	if err != nil {
+		return nil, err
+	}
+	return category, nil
+}
+
+func (r *CategoryRepository) FindByName(tx *gorm.DB, name string, userID uuid.UUID) (*entity.Category, error) {
+	var category *entity.Category
+	err := tx.Where("user_id = ? AND name = ?", userID, name).First(&category).Error
 	if err != nil {
 		return nil, err
 	}

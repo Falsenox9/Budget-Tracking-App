@@ -35,12 +35,18 @@ func NewCategoryService(db *gorm.DB, categoryRepo repository.ICategoryRepository
 }
 
 func (s *CategoryService) CreateCategory(param model.CategoryParam, userID uuid.UUID) (*model.CategoryResponse, error) {
+	categoryType := param.Type
+	if categoryType == "" {
+		categoryType = "Pengeluaran"
+	}
+
 	category := &entity.Category{
 		CategoryID:     uuid.New(),
 		Name:           param.Name,
 		Description:    param.Description,
-		Type:           param.Type,
+		Type:           categoryType,
 		AllowanceLimit: param.AllowanceLimit,
+		Color:          param.Color,
 		UserID:         userID,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
@@ -51,7 +57,6 @@ func (s *CategoryService) CreateCategory(param model.CategoryParam, userID uuid.
 		return nil, err
 	}
 
-	// Calculate progress (initially 0 spent)
 	return s.calculateCategoryProgress(category, 0), nil
 }
 
@@ -160,8 +165,11 @@ func (s *CategoryService) UpdateCategory(categoryID string, param model.Category
 
 	category.Name = param.Name
 	category.Description = param.Description
-	category.Type = param.Type
+	if param.Type != "" {
+		category.Type = param.Type
+	}
 	category.AllowanceLimit = param.AllowanceLimit
+	category.Color = param.Color
 	category.UpdatedAt = time.Now()
 
 	err = s.categoryRepo.Update(s.db, category)
@@ -215,6 +223,7 @@ func (s *CategoryService) calculateCategoryProgress(category *entity.Category, t
 		Description:    category.Description,
 		Type:           category.Type,
 		AllowanceLimit: category.AllowanceLimit,
+		Color:          category.Color,
 		TotalSpent:     totalSpent,
 		Remaining:      remaining,
 		Progress:       progress,
